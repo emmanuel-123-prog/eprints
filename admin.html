@@ -1,0 +1,410 @@
+--- START OF FILE admin.html ---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>ePrints Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#00897b;--green-dark:#004d40;--green-light:#e0f2f1;--green-bright:#00c853;
+  --bg:#f4f6f5;--white:#ffffff;--border:#e5ebe8;
+  --text:#0f1f15;--muted:#7a8f82;--red:#e53935;--gold:#f9a825;
+  --radius:14px;--nav:60px;
+  --shadow:0 2px 12px rgba(0,0,0,.07);--shadow-md:0 6px 24px rgba(0,0,0,.1);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;font-size:15px;font-weight:400;color:var(--text);background:var(--bg)}
+
+.screen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.screen-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:40px}
+.screen-body::-webkit-scrollbar{display:none}
+
+/* TOPBAR */
+.topbar{height:var(--nav);flex-shrink:0;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1rem;gap:.6rem;box-shadow:var(--shadow);z-index:10}
+.topbar-title{font-size:1rem;font-weight:700;color:var(--text);flex:1;text-align:center}
+.topbar-logo{font-size:1.1rem;font-weight:800;color:#fff;letter-spacing:-.02em;flex:1}
+.back-btn{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;flex-shrink:0}
+.topbar-action{min-width:38px;height:32px;padding:0 .9rem;border-radius:50px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-family:'Inter',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.topbar-spacer{width:38px;flex-shrink:0}
+
+/* PROFILE HEADER IN NAV */
+.nav-profile-pic{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.5);cursor:pointer}
+
+/* COMPONENTS */
+.wrap{max-width:900px;margin:0 auto;padding:1.2rem 1rem 1rem}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:.75rem;box-shadow:var(--shadow)}
+.card-inner{padding:1rem}
+.field{margin-bottom:.85rem}
+.field label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:.38rem}
+.field input, .field textarea{width:100%;padding:.78rem 1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'Inter',sans-serif;font-size:.9rem;color:var(--text);background:var(--white);outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,137,123,.1)}
+.btn{display:block;width:100%;padding:.88rem 1.2rem;border-radius:50px;border:none;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 4px 20px rgba(0,137,123,.25)}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}
+.btn-danger{background:#fff1f0;color:var(--red);border:1.5px solid #ffa39e}
+.err{font-size:.78rem;font-weight:500;color:var(--red);min-height:.9rem;margin-top:.4rem;text-align:center}
+
+/* STATS */
+.admin-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.2rem}
+@media(min-width:480px){.admin-stat-grid{grid-template-columns:repeat(4,1fr)}}
+.stat-box{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;box-shadow:var(--shadow)}
+.stat-num{font-size:1.7rem;font-weight:800;color:var(--green);letter-spacing:-.03em}
+.stat-lab{font-size:.68rem;color:var(--muted);font-weight:500;margin-top:.1rem}
+
+/* ADMIN CARDS */
+.admin-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.65rem;box-shadow:var(--shadow);position:relative}
+.admin-id{font-size:1rem;font-weight:800;color:var(--green)}
+.admin-meta{font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.admin-img, .admin-receipt{width:100%;max-height:140px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin:.4rem 0;cursor:zoom-in}
+
+/* IMAGE OVERLAY (LIGHTBOX) */
+#img-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+#img-overlay img{max-width:100%;max-height:90vh;border-radius:8px}
+#img-overlay .close-ov{position:absolute;top:20px;right:20px;color:white;font-size:2rem;cursor:pointer;font-weight:bold}
+
+/* LOGIN SCREEN */
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100%;background:linear-gradient(150deg,var(--green-dark),var(--green))}
+.login-box{background:var(--white);border-radius:20px;padding:2rem 1.5rem;width:90%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+
+/* PROFILE STYLES */
+.profile-card{text-align:center;padding:2rem 1rem}
+.profile-big-pic{width:100px;height:100px;border-radius:50%;object-fit:cover;margin:0 auto 1rem;border:3px solid var(--green)}
+
+/* Re-using some classes from your snippet */
+.chip-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
+.chip{padding:.3rem .8rem;border-radius:50px;font-size:.72rem;font-weight:600;border:1.5px solid var(--border);background:var(--white);color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip.active{background:var(--green);border-color:var(--green);color:#fff}
+.badge{font-size:.66rem;font-weight:700;padding:.22rem .65rem;border-radius:50px;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+.badge.pending {background:#fff8e1;border:1px solid #ffe082;color:#e65100}
+.badge.progress{background:#e3f2fd;border:1px solid #90caf9;color:#0d47a1}
+.badge.done    {background:#e8f5e9;border:1px solid #a5d6a7;color:#1b5e20}
+.badge.ready   {background:#f3e5f5;border:1px solid #ce93d8;color:#4a148c}
+.status-sel{padding:.32rem .65rem;border:1.5px solid var(--border);border-radius:8px;font-size:.76rem;font-weight:600;background:var(--white);cursor:pointer}
+.status-block{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.65rem .7rem}
+.status-block-lab{font-size:.63rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.6rem}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem .8rem;margin:.7rem 0}
+.admin-kv{font-size:.78rem} .admin-kv .k{color:var(--muted)} .admin-kv .v{font-weight:600}
+.spinner{width:28px;height:28px;border:2.5px solid var(--green-light);border-top-color:var(--green);border-radius:50%;animation:spin .65s linear infinite;margin:2rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- IMAGE LIGHTBOX -->
+<div id="img-overlay" onclick="this.style.display='none'">
+  <span class="close-ov">&times;</span>
+  <img id="ov-img" src="" alt="Preview"/>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━
+  SCREEN: LOGIN
+━━━━━━━━━━━━━━━━━━━━━━ -->
+<div id="s-login" class="screen">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div style="font-size:2rem;font-weight:900;color:var(--green);text-align:center;margin-bottom:.2rem">e<span>P</span>rints</div>
+      <div style="font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:1.5rem">Admin Dashboard · Staff Only</div>
+      <div class="field"><label>Password</label><input id="adm-pass" type="password" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')adminLogin()"/></div>
+      <p class="err" id="adm-err"></p>
+      <button class="btn btn-primary" onclick="adminLogin()" style="margin-top:.6rem">Enter Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━
+  SCREEN: DASHBOARD
+━━━━━━━━━━━━━━━━━━━━━━ -->
+<div id="s-admin" class="screen">
+  <div class="topbar" style="background:var(--green-dark)">
+    <div class="topbar-logo">ePrints <span style="font-size:.62rem;background:rgba(255,255,255,.2);padding:.12rem .5rem;border-radius:50px;font-weight:600">ADMIN</span></div>
+    <div style="display:flex;align-items:center;gap:.6rem">
+      <button class="topbar-action" onclick="goto('s-chats')">💬 Chats</button>
+      <img id="nav-pfp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="nav-profile-pic" onclick="goto('s-profile')">
+    </div>
+  </div>
+  <div class="screen-body">
+    <div class="wrap">
+      <div class="admin-stat-grid">
+        <div class="stat-box"><div class="stat-num" id="st-total">–</div><div class="stat-lab">Total Orders</div></div>
+        <div class="stat-box"><div class="stat-num" id="st-pending">–</div><div class="stat-lab">Pending</div></div>
+        <div class="stat-box"><div class="stat-num" id="st-progress">–</div><div class="stat-lab">In Progress</div></div>
+        <div class="stat-box"><div class="stat-num" id="st-done">–</div><div class="stat-lab">Completed</div></div>
+      </div>
+      <div class="chip-row">
+        <button class="chip active" onclick="filterAdmin('all',this)">All</button>
+        <button class="chip" onclick="filterAdmin('pending',this)">Pending</button>
+        <button class="chip" onclick="filterAdmin('progress',this)">In Progress</button>
+        <button class="chip" onclick="filterAdmin('done',this)">Done</button>
+      </div>
+      <div id="admin-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━
+  SCREEN: PROFILE
+━━━━━━━━━━━━━━━━━━━━━━ -->
+<div id="s-profile" class="screen">
+  <div class="topbar" style="background:var(--green-dark)">
+    <button class="back-btn" onclick="goto('s-admin')">←</button>
+    <div class="topbar-title" style="color:white">Admin Profile</div>
+    <div class="topbar-spacer"></div>
+  </div>
+  <div class="screen-body">
+    <div class="wrap">
+      <div class="card profile-card">
+        <img id="prof-img-view" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="profile-big-pic">
+        <h2 id="prof-email-view">admin@eprints.com</h2>
+        <p id="prof-bio-view" style="color:var(--muted);font-size:.85rem;margin-top:.5rem">ePrints Administrator</p>
+      </div>
+
+      <div class="card card-inner">
+        <div class="field"><label>Email Address</label><input id="inp-prof-email" type="email"></div>
+        <div class="field"><label>Profile Picture URL</label><input id="inp-prof-pic" type="text" placeholder="https://..."></div>
+        <div class="field"><label>Bio</label><textarea id="inp-prof-bio" rows="3"></textarea></div>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+        <button class="btn btn-ghost" onclick="doLogout()" style="margin-top:1rem">Logout / Lock Dashboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- (Chat screens remain mostly the same but integrated with the logic) -->
+<div id="s-chats" class="screen">
+  <div class="topbar" style="background:var(--green-dark)">
+    <button class="back-btn" onclick="goto('s-admin')">←</button>
+    <div class="topbar-logo" style="text-align:center" id="chat-screen-title">Customer Chats</div>
+    <div class="topbar-spacer"></div>
+  </div>
+  <div class="screen-body" id="chats-scroll">
+    <div id="chat-msgs" class="chat-area" style="display:none; padding:15px"></div>
+    <div class="wrap" id="chat-list-wrap">
+      <div id="chat-list"></div>
+    </div>
+  </div>
+  <div class="chat-input-bar" id="chat-reply-bar" style="display:none; padding:10px; border-top:1px solid var(--border)">
+    <input class="chat-input" id="chat-reply-input" style="flex:1; padding:10px; border-radius:20px; border:1px solid #ccc" placeholder="Reply..." onkeydown="if(event.key==='Enter')adminSendMsg()"/>
+    <button onclick="adminSendMsg()" style="padding:0 15px; background:var(--green); color:white; border-radius:20px; border:none; margin-left:5px">Send</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyAKcrDQDYlqDvO1V7aTsFJELP33DcVx_C8",
+  authDomain:"eprint-18e9c.firebaseapp.com",
+  projectId:"eprint-18e9c",
+  storageBucket:"eprint-18e9c.firebasestorage.app",
+  messagingSenderId:"384285763588",
+  appId:"1:384285763588:web:20a984563f99ef50c5ed51"
+});
+var db=firebase.firestore();
+var ADMIN_PASS='eprintS@2026';
+var allOrders=[], adminFilter='all';
+var adminOrdersUnsub=null, chatUnsub=null, activeChatUid=null;
+
+// ── INITIALIZE & PERSISTENT LOGIN ──
+window.onload = function() {
+  loadProfileData(); // Load profile from local storage
+  if (localStorage.getItem('eprints_admin_logged') === 'true') {
+    goto('s-admin');
+    loadAdminOrders();
+  } else {
+    goto('s-login');
+  }
+};
+
+function adminLogin(){
+  var pass=document.getElementById('adm-pass').value;
+  var err=document.getElementById('adm-err');
+  if(pass===ADMIN_PASS){
+    localStorage.setItem('eprints_admin_logged', 'true');
+    err.textContent='';
+    document.getElementById('adm-pass').value='';
+    loadAdminOrders();
+    goto('s-admin');
+  } else {
+    err.textContent='Incorrect password.';
+  }
+}
+
+function doLogout(){
+  localStorage.removeItem('eprints_admin_logged');
+  if(adminOrdersUnsub) adminOrdersUnsub();
+  location.reload(); 
+}
+
+// ── SCREEN NAV ──
+function goto(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── IMAGE LIGHTBOX ──
+function openImg(url) {
+  if(!url) return;
+  document.getElementById('ov-img').src = url;
+  document.getElementById('img-overlay').style.display = 'flex';
+}
+
+// ── DELETE ORDER ──
+function deleteOrder(id) {
+  if (confirm("Are you sure you want to delete this order? This cannot be undone.")) {
+    db.collection('orders').doc(id).delete()
+      .then(() => alert("Order deleted successfully."))
+      .catch(e => alert("Error deleting: " + e.message));
+  }
+}
+
+// ── LOAD ORDERS ──
+function loadAdminOrders(){
+  var list=document.getElementById('admin-list');
+  list.innerHTML='<div class="spinner"></div>';
+  if(adminOrdersUnsub) adminOrdersUnsub();
+  adminOrdersUnsub=db.collection('orders')
+    .onSnapshot(snap => {
+      allOrders=snap.docs.map(d => ({...d.data(), docId: d.id}));
+      allOrders.sort((a,b) => (b.createdAtMs||0)-(a.createdAtMs||0));
+      updateStats();
+      renderAdmin();
+    });
+}
+
+function updateStats() {
+  document.getElementById('st-total').textContent=allOrders.length;
+  document.getElementById('st-pending').textContent=allOrders.filter(o => o.status==='pending').length;
+  document.getElementById('st-progress').textContent=allOrders.filter(o => o.status==='progress').length;
+  document.getElementById('st-done').textContent=allOrders.filter(o => o.status==='done').length;
+}
+
+function filterAdmin(f,btn){
+  adminFilter=f;
+  document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAdmin();
+}
+
+function renderAdmin(){
+  var list=document.getElementById('admin-list');
+  var orders=adminFilter==='all'?allOrders:allOrders.filter(o => o.status===adminFilter);
+  if(!orders.length){
+    list.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">No orders.</div>';
+    return;
+  }
+  list.innerHTML='';
+  orders.forEach(o => {
+    var card=document.createElement('div');
+    card.className='admin-card';
+    var dImg = o.designURL ? `<img src="${o.designURL}" class="admin-img" onclick="openImg('${o.designURL}')">` : '';
+    var rImg = o.receiptURL ? `<img src="${o.receiptURL}" class="admin-receipt" onclick="openImg('${o.receiptURL}')">` : '<p style="color:red; font-size:12px">No Receipt</p>';
+    
+    card.innerHTML= `
+      <div style="display:flex; justify-content:space-between">
+        <div>
+           <div class="admin-id">#${o.orderId}</div>
+           <div class="admin-meta">👤 ${o.userName}</div>
+           <div class="admin-meta">🕐 ${fmtDate(o.createdAtMs)}</div>
+        </div>
+        <span class="badge ${o.status}">${o.status}</span>
+      </div>
+      <div class="admin-grid">
+        <div class="admin-kv"><span class="k">Qty:</span> <span class="v">${o.quantity}</span></div>
+        <div class="admin-kv"><span class="k">Size:</span> <span class="v">${o.size}</span></div>
+      </div>
+      ${dImg} ${rImg}
+      <div class="two-col">
+        <div class="status-block">
+          <div class="status-block-lab">Order Status</div>
+          <select class="status-sel" onchange="updateStatus('${o.docId}', this.value)">
+            <option value="pending" ${o.status==='pending'?'selected':''}>Pending</option>
+            <option value="progress" ${o.status==='progress'?'selected':''}>Progress</option>
+            <option value="done" ${o.status==='done'?'selected':''}>Done</option>
+          </select>
+        </div>
+        <button class="btn btn-danger" onclick="deleteOrder('${o.docId}')" style="height:fit-content; align-self:end; padding:8px; font-size:12px">🗑 Delete</button>
+      </div>
+      <button class="btn btn-ghost" onclick="openChatWith('${o.userId}','${o.userName}')" style="margin-top:.5rem;padding:.45rem;font-size:.75rem">💬 Chat</button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function updateStatus(docId, val) {
+  db.collection('orders').doc(docId).update({status: val});
+}
+
+// ── PROFILE LOGIC ──
+function saveProfile() {
+  const profile = {
+    email: document.getElementById('inp-prof-email').value,
+    pic: document.getElementById('inp-prof-pic').value,
+    bio: document.getElementById('inp-prof-bio').value
+  };
+  localStorage.setItem('eprints_admin_profile', JSON.stringify(profile));
+  loadProfileData();
+  alert("Profile updated!");
+}
+
+function loadProfileData() {
+  const saved = localStorage.getItem('eprints_admin_profile');
+  if(saved) {
+    const p = JSON.parse(saved);
+    document.getElementById('prof-email-view').textContent = p.email || 'admin@eprints.com';
+    document.getElementById('prof-bio-view').textContent = p.bio || 'ePrints Administrator';
+    document.getElementById('prof-img-view').src = p.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    document.getElementById('nav-pfp').src = p.pic || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    
+    // Fill inputs
+    document.getElementById('inp-prof-email').value = p.email || '';
+    document.getElementById('inp-prof-pic').value = p.pic || '';
+    document.getElementById('inp-prof-bio').value = p.bio || '';
+  }
+}
+
+// ── CHATS (Simplified for brevity, matches your structure) ──
+function openChatWith(uid, name) {
+  activeChatUid=uid;
+  document.getElementById('chat-screen-title').textContent=name;
+  document.getElementById('chat-list-wrap').style.display='none';
+  document.getElementById('chat-reply-bar').style.display='flex';
+  document.getElementById('chat-msgs').style.display='flex';
+  goto('s-chats');
+  if(chatUnsub) chatUnsub();
+  chatUnsub=db.collection('chats').doc(uid).collection('messages').orderBy('ts','asc').onSnapshot(snap => {
+    var box=document.getElementById('chat-msgs');
+    box.innerHTML='';
+    snap.forEach(doc => {
+      var m=doc.data();
+      var div=document.createElement('div');
+      div.style= m.role==='admin' ? "align-self:flex-end; background:var(--green); color:white; padding:8px 12px; border-radius:15px; margin-bottom:5px" : "align-self:flex-start; background:#eee; padding:8px 12px; border-radius:15px; margin-bottom:5px";
+      div.textContent = m.text;
+      box.appendChild(div);
+    });
+  });
+}
+
+function adminSendMsg(){
+  var inp=document.getElementById('chat-reply-input');
+  var text=inp.value.trim();
+  if(!text || !activeChatUid) return;
+  db.collection('chats').doc(activeChatUid).collection('messages').add({
+    text:text, role:'admin', ts:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  inp.value='';
+}
+
+function fmtDate(ms){
+  if(!ms) return '—';
+  var d=new Date(ms);
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+}
+</script>
+</body>
+</html>
